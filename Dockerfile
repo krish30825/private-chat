@@ -22,15 +22,15 @@ RUN echo '<Directory /var/www/html/public>\n\
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy all project files into the container
+# Copy project files
 COPY . /var/www/html
-
-# Give permissions to Laravel folders
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Set permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
@@ -40,4 +40,3 @@ ENV APP_ENV=production
 
 # Start Apache
 CMD ["apache2ctl", "-D", "FOREGROUND"]
-
