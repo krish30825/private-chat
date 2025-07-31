@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: private-chat
+    env: docker
+    repo: https://github.com/krish30825/private-chat.git
+    plan: free
+
