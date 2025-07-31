@@ -1,6 +1,21 @@
 services:
   - type: web
     name: private-chat
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        value: base64:your_app_key_here
+services:
+  - type: web
+    name: private-chat
     runtime: docker
     plan: free
     branch: main
@@ -11,6 +26,6 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_KEY
-        value: base64:PLACEHOLDER_KEY
+        value: base64:6p5fZDQvD6Ng2v68VTOvGHkNwHVM9Vk9LNmuOO2zsYQ=
       - key: DB_CONNECTION
         value: sqlite
