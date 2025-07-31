@@ -1,33 +1,35 @@
+# Use the official PHP Apache image
 FROM php:7.4-apache
 
-# Install system dependencies
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+    libzip-dev zip unzip git curl \
+    && docker-php-ext-install pdo pdo_mysql zip
 
-# Enable Apache mod_rewrite
+# Enable Apache mod_rewrite (needed for Laravel routing)
 RUN a2enmod rewrite
+
+# Set Apache to serve from Laravel's public directory
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy existing application directory contents
+# Copy all project files into the container
 COPY . /var/www/html
 
-# Copy existing application directory permissions
-COPY --chown=www-data:www-data . /var/www/html
+# Give permissions to Laravel folders
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Install Laravel dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
+# Set environment to production
+ENV APP_ENV=production
 
-EXPOSE 80
-
-CMD ["apache2-foreground"]
-
+# Start Apache
+CMD ["apache2ctl", "-D", "FOREGROUND"]
