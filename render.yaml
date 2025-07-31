@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: private-chat
+    runtime: docker
+    plan: free
+    branch: main
+    repo: https://github.com/krish30825/private-chat
+    dockerContext: .
+    dockerfilePath: Dockerfile
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_KEY
+        value: base64:PLACEHOLDER_KEY
+      - key: DB_CONNECTION
+        value: sqlite
