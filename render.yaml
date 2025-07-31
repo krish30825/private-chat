@@ -1,31 +1,12 @@
 services:
   - type: web
     name: private-chat
-    env: docker
-    plan: free
-    dockerfilePath: ./Dockerfile
-    buildCommand: ""
-    startCommand: ""
+    env: php
+    buildCommand: |
+      apt-get update && apt-get install -y zip unzip && \
+      composer install --no-dev --optimize-autoloader
+    startCommand: apache2-foreground
     envVars:
-      - key: APP_ENV
-        value: production
-      - key: APP_DEBUG
-        value: false
-      - key: APP_KEY
-        value: base64:your_app_key_here
-services:
-  - type: web
-    name: private-chat
-    runtime: docker
-    plan: free
-    branch: main
-    repo: https://github.com/krish30825/private-chat
-    dockerContext: .
-    dockerfilePath: Dockerfile
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: APP_KEY
-        value: base64:6p5fZDQvD6Ng2v68VTOvGHkNwHVM9Vk9LNmuOO2zsYQ=
-      - key: DB_CONNECTION
-        value: sqlite
+      - key: PHP_VERSION
+        value: 7.4
+    rootDir: .

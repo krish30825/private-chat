@@ -21,3 +21,7 @@ Route::get('/home', 'HomeController@index')->name('home');
 Route::get('/chat', 'HomeController@chat')->name('chat');
 
 Auth::routes();
+
+Route::get('/test', function () {
+    return 'Laravel is working!';
+});
