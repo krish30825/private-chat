@@ -1,49 +1,31 @@
-# Use the official PHP Apache image
+# Step 1: Use official PHP with Apache image
 FROM php:7.4-apache
 
-# Install system dependencies and PHP extensions
+# Step 2: Install PHP extensions required by Laravel
 RUN apt-get update && apt-get install -y \
-    libzip-dev zip unzip git curl \
+    libzip-dev \
+    unzip \
+    zip \
+    git \
+    curl \
     && docker-php-ext-install pdo pdo_mysql zip
 
-# Enable Apache mod_rewrite (needed for Laravel routing)
+# Step 3: Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Set Apache to serve from Laravel's public directory
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|' /etc/apache2/sites-available/000-default.conf
+# Step 4: Set the document root to /var/www/html/public
+RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
 
-# Update the <Directory> directive in Apache config
-RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/c\\
-<Directory /var/www/html/public>\n\
-    Options Indexes FollowSymLinks\n\
-    AllowOverride All\n\
-    Require all granted\n\
-</Directory>' /etc/apache2/apache2.conf
-
-# Set working directory
-WORKDIR /var/www/html
-
-# Copy all project files into the container
+# Step 5: Copy project files into the container
 COPY . /var/www/html
 
-# Ensure Laravel .htaccess exists
-RUN if [ ! -f /var/www/html/public/.htaccess ]; then echo "<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteRule ^(.*)$ public/\$1 [L]\n</IfModule>" > /var/www/html/public/.htaccess; fi
+# Step 6: Set working directory
+WORKDIR /var/www/html
 
-# Give permissions to Laravel folders
+# Step 7: Set permissions for Laravel directories
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage /var/www/html/bootstrap/cache
+    && chmod -R 755 /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
-# Install Laravel dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Set environment to production
-ENV APP_ENV=production
-
-# Expose port 80
+# Step 8: Expose Apache port
 EXPOSE 80
-
-# Start Apache
-CMD ["apache2ctl", "-D", "FOREGROUND"]
