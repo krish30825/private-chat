@@ -1,39 +1,30 @@
-# Use official PHP image with extensions required by Laravel
 FROM php:7.4-fpm
-
-# Set working directory inside the container
-WORKDIR /var/www
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    libzip-dev \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    git curl zip unzip libpng-dev libonig-dev libxml2-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Copy entire application source (make sure `database/seeds/` is included!)
+# Set working directory
+WORKDIR /var/www
+
+# Copy existing application
 COPY . .
 
 # Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
 
-# Set proper permissions
+# Set permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www
 
-# Laravel environment setup
+# Copy environment file and generate app key
 COPY .env.example .env
 RUN php artisan key:generate || true
 
-# Expose the default PHP-FPM port
-EXPOSE 9000
-
-CMD ["php-fpm"]
+# 👇 THIS IS IMPORTANT FOR RENDER
+EXPOSE 8080
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
