@@ -1,31 +1,37 @@
-# Step 1: Use official PHP with Apache image
 FROM php:7.4-apache
 
-# Step 2: Install PHP extensions required by Laravel
-RUN apt-get update && apt-get install -y \
-    libzip-dev \
-    unzip \
-    zip \
-    git \
-    curl \
-    && docker-php-ext-install pdo pdo_mysql zip
-
-# Step 3: Enable Apache mod_rewrite
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
-# Step 4: Set the document root to /var/www/html/public
-RUN sed -i 's|DocumentRoot /var/www/html|DocumentRoot /var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# Install required PHP extensions
+RUN apt-get update && apt-get install -y \
+    zip unzip git curl libpng-dev libonig-dev libxml2-dev libzip-dev \
+    && docker-php-ext-install pdo pdo_mysql mbstring zip exif pcntl
 
-# Step 5: Copy project files into the container
-COPY . /var/www/html
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Step 6: Set working directory
+# Set working directory
 WORKDIR /var/www/html
 
-# Step 7: Set permissions for Laravel directories
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html \
-    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+# Copy only composer files first
+COPY composer.lock composer.json ./
 
-# Step 8: Expose Apache port
+# Install PHP dependencies
+RUN composer install --no-dev --no-interaction --optimize-autoloader
+
+# Copy the rest of the application
+COPY . .
+
+# Set Apache document root to /public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+
+# Update Apache config
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# Expose port
 EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"]
